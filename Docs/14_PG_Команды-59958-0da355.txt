@@ -1,0 +1,132 @@
+
+
+pg_lsclusters 	- наличие кластера Постгреса
+
+sudo pg_ctlcluster 12 main start		- запуск Постгреса
+
+sudo -u postgres psql	-d otus	- переход в оболочку psql
+
+
+create database name;	создать базу
+\c name			перейти в нее
+
+create table student as 
+select 
+  generate_series(1,10) as id,
+  md5(random()::text)::char(10) as fio;
+
+select * from student;
+
+show wal_level;
+alter system set wal_level = replica;
+
+	/etc/postgresql/12/main/pg_hba.conf
+host	replication		имя_пользователя	IP_адрес		md5
+
+	/etc/postgresql/12/main/postgresql.conf
+listen_addresses = 'localhost, IP_адрес'
+
+Создадим 2 кластер
+sudo pg_createcluster -d /var/lib/postgresql/12/main2 12 main2
+
+	/etc/postgresql/12/main2/pg_hba.conf
+host	replication		имя_пользователя	IP_адрес		md5
+
+	/etc/postgresql/12/main2/postgresql.conf
+listen_addresses = 'localhost, IP_адрес'
+
+Удалим оттуда файлы
+sudo rm -rf /var/lib/postgresql/12/main2
+
+Сделаем бэкап нашей БД. Ключ -R создаст заготовку управляющего файла recovery.conf.
+sudo -u postgres pg_basebackup -p 5432 -R -D /var/lib/postgresql/12/main2
+
+Зададим другой порт (задан по умолчанию)
+-- echo 'port = 5433' >> /var/lib/postgresql/10/main2/postgresql.auto.conf
+
+Добавим параметр горячего резерва, чтобы реплика принимала запросы на чтение 
+(задан по умолчанию ключом D)
+--sudo echo 'hot_standby = on' >> /var/lib/postgresql/12/main2/postgresql.auto.conf
+
+Стартуем кластер
+sudo pg_ctlcluster 12 main2 start
+
+Смотрим как стартовал
+pg_lsclusters
+
+
+Проверим состояние репликации:
+на мастере
+SELECT * FROM pg_stat_replication \gx
+SELECT * FROM pg_current_wal_lsn();
+
+
+sudo -u postgres psql -p 5434
+
+на реплике
+select * from pg_stat_wal_receiver \gx
+select pg_last_wal_receive_lsn();
+select pg_last_wal_replay_lsn();
+
+Перевод в состояние мастера
+sudo pg_ctlcluster 12 main2 promote
+
+SELECT * FROM pg_stat_replication \gx
+
+
+Логическая репликация
+у первого сервера
+ALTER SYSTEM SET wal_level = logical;
+
+Рестартуем кластер
+sudo pg_ctlcluster 12 main restart
+
+sudo -u postgres psql -p 5432 -d otus
+На первом сервере создаем публикацию:
+CREATE PUBLICATION test_pub FOR TABLE student;
+
+Просмотр созданной публикации
+\dRp+
+
+Задать пароль
+\password 
+pas123
+
+
+sudo pg_ctlcluster 14 main start
+sudo -u postgres psql -p 5433
+select version();
+
+создадим подписку на втором экземпляре
+--создадим подписку к БД по Порту с Юзером и Паролем и Копированием данных=false
+CREATE SUBSCRIPTION test_sub 
+CONNECTION 'host=localhost port=5432 user=postgres password=pas123 dbname=otus' 
+PUBLICATION test_pub WITH (copy_data = true);
+
+\dRs
+SELECT * FROM pg_stat_subscription \gx
+
+
+--добавим одинаковые данные
+---добавить индекс
+create unique index on student(id);
+\dS+ test
+
+добавить одиноковые значения
+удалить на втором экземпляре конфликтные записи
+
+SELECT * FROM pg_stat_subscription \gx	просмотр состояния (при конфликте пусто)
+
+просмотр логов
+$ tail /var/log/postgresql/postgresql-14-main.log
+
+
+drop publication test_pub;
+drop subscription test_sub;
+
+Удаление кластера
+sudo pg_dropcluster 12 main2
+
+----------
+
+

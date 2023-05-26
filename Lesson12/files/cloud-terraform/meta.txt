@@ -1,0 +1,8 @@
+#cloud-config
+users:
+  - name: <имя_сервисного_аккаунта>
+    groups: sudo
+    shell: /bin/bash
+    sudo: ['ALL=(ALL) NOPASSWD:ALL']
+    ssh_authorized_keys:
+      - <публичный_ssh_ключ>

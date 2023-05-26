@@ -1,0 +1,60 @@
+﻿3 CREATE DATABASE testdb
+
+4 \c testdb
+
+5 CREATE SCHEMA testnm;
+
+6 CREATE TABLE t1(c1 integer);
+
+7 INSERT INTO t1 values(1);
+
+8 CREATE role readonly;
+
+9 grant connect on DATABASE testdb TO readonly;
+
+10 grant usage on SCHEMA testnm to readonly;
+
+11 grant SELECT on all TABLEs in SCHEMA testnm TO readonly;
+
+12 CREATE USER testread with password 'test123';
+
+13 grant readonly TO testread;
+
+14 \c testdb testread
+
+14а при проблемах с подключением смотрим * в конце файла
+
+15 SELECT * FROM t1;
+
+19 \dt
+
+20 таблица создана в схеме public а не testnm и прав на public для роли readonly не давали
+
+21 потому что в search_path скорее всего "$user", public при том что схемы $USER нет то таблица по умолчанию создалась в public
+
+22 \c testdb postgres
+
+23 drop TABLE t1;
+
+24 CREATE TABLE testnm.t1(c1 integer);
+
+25 INSERT INTO testnm.t1 values(1);
+
+29 потому что grant SELECT on all TABLEs in SCHEMA testnm TO readonly дал доступ только для существующих на тот момент времени таблиц а t1 пересоздавалась
+
+30 \c testdb postgres; 
+ALTER default privileges in SCHEMA testnm grant SELECT on TABLEs to readonly; 
+\c testdb testread;
+
+33 потому что ALTER default будет действовать для новых таблиц а grant SELECT on all TABLEs in SCHEMA testnm TO readonly отработал только для существующих на тот момент времени. надо сделать снова или grant SELECT или пересоздать таблицу
+
+36 это все потому что search_path указывает в первую очередь на схему public. А схема public создается в каждой базе данных по умолчанию. И grant на все действия в этой схеме дается роли public. А роль public добавляется всем новым пользователям. Соответсвенно каждый пользователь может по умолчанию создавать объекты в схеме public любой базы данных, ес-но если у него есть право на подключение к этой базе данных. Чтобы раз и навсегда забыть про роль public - а в продакшн базе данных про нее лучше забыть - выполните следующие действия 
+\c testdb postgres; 
+revoke CREATE on SCHEMA public FROM public; 
+revoke all on DATABASE testdb FROM public; 
+\c testdb testread; 
+
+* При ошибке - "FATAL:  Peer authentication failed for user "testread"" на 14-ом шаге
+Вам необходимо указывать, что вы работаете не через Peer authentication пользователя линукс, а через пароль. 
+Поменяйте конфигурацию в файле pg_hba.conf на md5 для локального входа. 
+2 вариант четко указать использовать подключение по сети psql -h 127.0.0.1 -U testread -d testdb -W

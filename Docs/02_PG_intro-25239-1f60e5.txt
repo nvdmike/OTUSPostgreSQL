@@ -1,0 +1,369 @@
+-- развернем ВМ postgres в GCE
+
+--image-family=ubuntu-2204-lts
+gcloud beta compute --project=celtic-house-266612 instances create postgres2 --zone=us-central1-a --machine-type=e2-medium --subnet=default --network-tier=PREMIUM --maintenance-policy=MIGRATE --service-account=933982307116-compute@developer.gserviceaccount.com --scopes=https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write,https://www.googleapis.com/auth/servicecontrol,https://www.googleapis.com/auth/service.management.readonly,https://www.googleapis.com/auth/trace.append --image-family=ubuntu-2204-lts --image-project=ubuntu-os-cloud --boot-disk-size=10GB --boot-disk-type=pd-ssd --boot-disk-device-name=postgres2 --no-shielded-secure-boot --shielded-vtpm --shielded-integrity-monitoring --reservation-affinity=any
+ 
+gcloud compute ssh postgres2
+
+-- по умолчанию установится 12 версия
+-- зависит от версии ОС !!!
+sudo apt-get -y install postgresql
+
+-- для установки 13 версии (без 12)
+-- https://www.postgresql.org/download/linux/ubuntu/
+sudo apt update && sudo apt upgrade -y -q
+sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list' && wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+sudo apt-get update
+
+-- установится 13 версия
+sudo apt-get -y install postgresql
+
+-- если 13 поверх 12
+sudo apt update && sudo apt upgrade -y && sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list' && wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add - && sudo apt-get update && sudo apt-get -y install postgresql-13
+
+-- 14 версия
+sudo apt update && sudo apt upgrade -y && sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list' && wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add - && sudo apt-get update && sudo apt-get -y install postgresql-14
+
+-- 15 версия
+sudo apt update && sudo apt upgrade -y && sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list' && wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add - && sudo apt-get update && sudo apt-get -y install postgresql-15
+
+
+-- если будете экспериментировать с промежуточными версиями, не LTS
+-- корректно добавим к upgrade & install postgres
+-- sudo DEBIAN_FRONTEND=noninteractive apt upgrade -y -q
+-- sudo apt update && sudo DEBIAN_FRONTEND=noninteractive apt upgrade -y -q && sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list' && wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add - && sudo apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt -y install postgresql-14
+
+-- посмотрим, что кластер стартовал
+pg_lsclusters
+
+
+
+
+-- посмотрим новый метод шифрования пароля
+sudo cat /etc/postgresql/15/main/pg_hba.conf
+
+-- старый
+sudo cat /etc/postgresql/12/main/pg_hba.conf
+
+
+-- протестим ssh 
+gcloud beta compute --project=celtic-house-266612 instances create sshtest --zone=us-central1-a --machine-type=e2-medium --subnet=default --network-tier=PREMIUM --maintenance-policy=MIGRATE --service-account=933982307116-compute@developer.gserviceaccount.com --scopes=https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write,https://www.googleapis.com/auth/servicecontrol,https://www.googleapis.com/auth/service.management.readonly,https://www.googleapis.com/auth/trace.append --image-family=ubuntu-2204-lts --image-project=ubuntu-os-cloud --boot-disk-size=10GB --boot-disk-type=pd-ssd --boot-disk-device-name=sshtest --no-shielded-secure-boot --shielded-vtpm --shielded-integrity-monitoring --reservation-affinity=any
+
+gcloud compute ssh sshtest
+
+gcloud compute instances list
+
+ssh aeugene@34.173.149.61
+
+ssh-keygen -t rsa
+
+-- запускаем агента, если не запущен
+eval `ssh-agent -s`
+ssh-add .ssh/id_rsa
+
+-- добавим ключ в metadata
+
+
+ssh aeugene@35.224.57.125
+
+-- удалим тестовую ВМ
+gcloud compute instances delete sshtest
+
+
+-- Ubuntu 22.04
+-- Минимальные параметры 1 ядро 2Гб ОЗУ. Рекомендую SSD диск 10Gb. Также не забывайте отключать ВМ, когда не используете
+-- https://cloud.yandex.ru/docs/compute/operations/vm-connect/ssh?from=int-console-help-center-or-nav
+yc compute instance create \
+  --name postgres \
+  --hostname postgres \
+  --create-boot-disk size=15G,type=network-ssd,image-folder-id=standard-images,image-family=ubuntu-2204-lts \
+  --network-interface subnet-name=default-ru-central1-a,nat-ip-version=ipv4 \
+  --zone ru-central1-a \
+  --metadata-from-file ssh-keys=/home/aeugene/.ssh/aeugene.txt
+
+-- обратит внимание на aeugene.txt
+cat /home/aeugene/.ssh/aeugene.txt
+
+-- как сгенерировать ssh ключи
+-- ssh-keygen -t rsa
+-- запускаем агента, если не запущен
+-- eval `ssh-agent -s`
+-- ssh-add .ssh/id_rsa
+
+
+yc compute instance get postgres
+yc compute instance get --full postgres
+
+
+ssh aeugene@51.250.69.189
+ssh yc-user@51.250.69.189
+ssh root@51.250.69.189
+ssh ubuntu@51.250.69.189
+
+-- если что пошло не так - серийная консоль
+-- https://github.com/yandex-cloud/docs/blob/master/ru/compute/operations/serial-console/index.md
+
+
+-- pg_updatecluster
+pg_lsclusters
+-- обратите внимание на 2 разных кластера с одинаковым именем
+
+-- 15 версия
+-- DEBIAN_FRONTEND=noninteractive - чтобы интерактивно не отвечать на обновление компонентов
+-- в ЯО оооочень долгая процедура
+-- sudo apt update && sudo DEBIAN_FRONTEND=noninteractive apt upgrade -y -q && 
+-- сразу ставим ПГ15
+sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list' && wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add - && sudo apt-get update && sudo apt-get -y install postgresql-15
+
+
+
+-- запустим во 2 окне для тестирования уровней изоляции транзакций
+gcloud compute ssh postgres2
+
+-- посмотрим на наши кластера
+pg_lsclusters
+
+-- удалим все
+sudo pg_ctlcluster 15 main stop
+sudo pg_dropcluster 15 main
+
+-- создадим 14 версии под пользователем postgres
+sudo -u postgres pg_createcluster 14 main
+
+pg_lsclusters
+
+sudo pg_ctlcluster 14 main start
+
+sudo -u postgres psql
+-- sudo su postgres
+-- psql
+
+
+-- создадим табличку для тестов
+-- https://www.postgresql.org/docs/14/sql-set-transaction.html
+CREATE DATABASE iso;
+\c iso
+-- список БД
+\l
+SELECT current_database();
+CREATE TABLE test (i serial, amount int);
+INSERT INTO test(amount) VALUES (100);
+INSERT INTO test(amount) VALUES (500);
+SELECT * FROM test;
+
+\echo :AUTOCOMMIT
+\set AUTOCOMMIT OFF
+show transaction isolation level;
+set transaction isolation level read committed;
+set transaction isolation level repeatable read;
+set transaction isolation level serializable;
+SELECT txid_current();
+\set AUTOCOMMIT ON
+SELECT txid_current();
+SELECT * FROM test;
+commit;
+
+SELECT * FROM pg_stat_activity;
+
+-- глобально можно изменить
+-- ALTER DATABASE <db name> SET DEFAULT_TRANSACTION_ISOLATION TO 'read committed';
+-- set the default_transaction_isolation parameter appropriately, 
+-- either in postgresql.conf or with ALTER SYSTEM. After reloading, this will apply to the whole cluster.
+-- You can also use ALTER DATABASE or ALTER ROLE to change the setting for a database or user only.
+
+
+-- test TRANSACTION ISOLATION LEVEL READ COMMITTED;
+-- 1 console
+BEGIN;
+SELECT * FROM test;
+
+-- 2 consoleapp=# 
+-- sudo -u postgres psql
+\c iso
+BEGIN;
+UPDATE test set amount = 555 WHERE i = 1;
+COMMIT;
+
+-- 1 console
+SELECT * FROM test; -- different values
+COMMIT;
+
+
+-- TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+-- 1 console
+BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+SELECT * FROM test;
+ i | amount
+---+--------
+ 2 |    500
+ 1 |    555
+(2 rows)
+
+-- 2 console
+BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+INSERT INTO test VALUES (888);
+COMMIT;
+
+-- 1 console
+SELECT * FROM test;
+ i | amount
+---+--------
+ 2 |    500
+ 1 |    555
+(2 rows)
+
+
+
+-- TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+DROP TABLE IF EXISTS testS;
+CREATE TABLE testS (i int, amount int);
+INSERT INTO TESTS VALUES (1,10), (1,20), (2,100), (2,200); 
+
+
+-- 1 console
+BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+SELECT sum(amount) FROM testS WHERE i = 1;
+INSERT INTO testS VALUES (2,30);
+
+-- 2 consol
+BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+SELECT sum(amount) FROM testS WHERE i = 2;
+INSERT INTO testS VALUES (1,300);
+
+-- 1 console 
+COMMIT;
+
+-- 2 console 
+COMMIT;
+
+
+-- то же самое на RR
+-- 1 console
+BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+SELECT sum(amount) FROM testS WHERE i = 1;
+INSERT INTO testS VALUES (2,30);
+
+-- 2 consol
+BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+SELECT sum(amount) FROM testS WHERE i = 2;
+INSERT INTO testS VALUES (1,300);
+
+-- 1 console 
+COMMIT;
+
+-- 2 console 
+COMMIT;
+
+-- управление транзакциями в процедурах
+drop table if exists test1;
+create table test1 (a int);
+drop procedure if exists transaction_test1();
+CREATE PROCEDURE transaction_test1()
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    FOR i IN 0..9 LOOP
+        INSERT INTO test1 (a) VALUES (i);
+        IF i % 2 = 0 THEN
+            COMMIT;
+        ELSE
+            ROLLBACK;
+        END IF;
+    END LOOP;
+END;
+$$;
+
+CALL transaction_test1();
+select * from test1;
+
+-- SAVEPOINT
+drop table if exists table1;
+drop table if exists table1 cascade;
+create table table1 (i int);
+BEGIN;
+    INSERT INTO table1 VALUES (1);
+    SAVEPOINT my_savepoint;
+    INSERT INTO table1 VALUES (2);
+    SAVEPOINT my_savepoint;
+    INSERT INTO table1 VALUES (3);
+
+    -- rollback to the second savepoint
+    ROLLBACK TO SAVEPOINT my_savepoint;
+    SELECT * FROM table1;               -- shows rows 1 and 2
+
+    -- release the second savepoint
+    RELEASE SAVEPOINT my_savepoint;
+
+    -- rollback to the first savepoint
+    ROLLBACK TO SAVEPOINT my_savepoint;
+    SELECT * FROM table1;               -- shows only row 1
+COMMIT;
+
+
+
+-- Альма линукс
+ssh aeugene@158.160.14.49
+
+-- https://www.hostinger.com/tutorials/how-to-install-postgresql-on-centos-7/
+-- 12 PostgreSQL
+sudo yum update -y && sudo yum upgrade -y && sudo yum install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm && sudo yum install -y postgresql12-server
+
+yum list available | grep postgres
+
+rpm -qi pgdg-redhat-repo
+
+sudo dnf -y install postgresql12 postgresql12-server
+-- а потому что сентос8 ...
+
+
+sudo yum -y install https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+sudo dnf -qy module disable postgresql
+sudo dnf -y install postgresql12 postgresql12-server
+
+-- Initialize the database:
+sudo /usr/pgsql-12/bin/postgresql-12-setup initdb
+
+-- launch PostgreSQL
+sudo systemctl start postgresql-12
+
+--Enable PostgreSQL Launch on Reboot
+sudo systemctl enable postgresql-12
+
+-- посмотрим, что кластер стартовал
+/usr/pgsql-12/bin/pg_ctl status
+/usr/pgsql-12/bin/pg_ctl --help
+
+sudo -u postgres psql
+
+show hba_file;
+-- /var/lib/pgsql/12/data/pg_hba.conf
+show config_file;
+-- /var/lib/pgsql/12/data/postgresql.conf
+show data_directory;
+-- /var/lib/pgsql/12/data
+
+sudo su postgres
+/usr/pgsql-12/bin/pg_ctl status -D /var/lib/pgsql/12/data
+
+-- uncomment listen_addresses = '*'
+sudo yum install nano -y
+sudo nano /var/lib/pgsql/12/data/postgresql.conf
+
+-- host    all             all             0.0.0.0/0               md5/scram-sha-256
+-- not ident!
+sudo nano /var/lib/pgsql/12/data/pg_hba.conf
+
+
+sudo su postgres
+/usr/pgsql-12/bin/pg_ctl restart -D /var/lib/pgsql/12/data
+
+-- минимальный запуск докера
+sudo docker run --name pg-server -p 5432:5432 -e POSTGRES_PASSWORD=postgres postgres:15
+
+
+
+-- как выйти из psql Postgres до 10 версии?
+-- \q
+exit
+
+gcloud compute instances delete postgres
