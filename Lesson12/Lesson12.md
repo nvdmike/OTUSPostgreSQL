@@ -96,7 +96,7 @@ yc config set folder-id <id_каталога>
 
 13. Далее, в окнном менеджерея набрал команду `%appdata%`, чтобы перейти в соответствующий каталог.
 
-14. В открывшемся каталоге я создал новый файл `terraform.rc` и скопировал в него данный блок:
+14. В открывшемся каталоге я создал новый файл [terraform.rc](https://github.com/nvdmike/OTUSPostgreSQL/blob/main/Lesson12/files/terraform.rc "terraform.rc") и скопировал в него данный блок:
 
 ```log
 provider_installation {
