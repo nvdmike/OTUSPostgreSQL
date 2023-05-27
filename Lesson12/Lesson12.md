@@ -96,19 +96,7 @@ yc config set folder-id <id_каталога>
 
 13. Далее, в окнном менеджере я набрал команду `%appdata%`, чтобы перейти в соответствующий каталог.
 
-14. В открывшемся каталоге я создал новый файл [terraform.rc](https://github.com/nvdmike/OTUSPostgreSQL/blob/main/Lesson12/files/terraform.rc "terraform.rc") и скопировал в него данный блок:
-
-```log
-provider_installation {
-  network_mirror {
-    url = "https://terraform-mirror.yandexcloud.net/"
-    include = ["registry.terraform.io/*/*"]
-  }
-  direct {
-    exclude = ["registry.terraform.io/*/*"]
-  }
-}
-```
+14. В открывшийся каталог я скопировал файл [terraform.rc](https://github.com/nvdmike/OTUSPostgreSQL/blob/main/Lesson12/files/terraform.rc "terraform.rc").
 
 15. Затем я перешёл в каталог с файлами конфигурации terraform и инициализировал файлы конфигурации:
 
