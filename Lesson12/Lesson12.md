@@ -94,11 +94,9 @@ yc config set folder-id <id_каталога>
 > * `id_ресурса` — я уже получил ранее;
 > * `id_каталога` — я уже получил ранее.
 
-13. Далее, в окнном менеджере я набрал команду `%appdata%`, чтобы перейти в соответствующий каталог.
+13. Далее, в окнном менеджере я набрал команду `%appdata%`, чтобы перейти в соответствующий каталог и, в открывшийся каталог, я скопировал файл [terraform.rc](https://github.com/nvdmike/OTUSPostgreSQL/blob/main/Lesson12/files/terraform.rc "terraform.rc").
 
-14. В открывшийся каталог я скопировал файл [terraform.rc](https://github.com/nvdmike/OTUSPostgreSQL/blob/main/Lesson12/files/terraform.rc "terraform.rc").
-
-15. Затем я перешёл в каталог с файлами конфигурации terraform и инициализировал файлы конфигурации:
+14. Затем я перешёл в каталог с файлами конфигурации terraform и инициализировал файлы конфигурации:
 
 ```bash
 cd 'C:\Program Files\Terraform\cloud-terraform\'
@@ -107,7 +105,7 @@ terraform init
 
 > **Примечание:** терминал должен быть запущен в режиме адмнинистратора системы!
 
-16. Т.к. в этом случае, я первый раз использую terraform, решил сгенерировать новый ssh-ключ с именем `yc` и сразу добавляю этот ключ в базу ssh-agent:
+15. Т.к. в этом случае, я первый раз использую terraform, решил сгенерировать новый ssh-ключ с именем `yc` и сразу добавляю этот ключ в базу ssh-agent:
 
 ```bash
 ssh-keygen -t rsa
@@ -125,7 +123,7 @@ connection {
 }
 ```
 
-17. В параметр name вставляю `имя_сервисного_аккаунта`. Так же копирую сгенерированный ключ и вставляю в файл [meta.txt](https://github.com/nvdmike/OTUSPostgreSQL/blob/main/Lesson12/files/cloud-terraform/meta.txt "meta.txt"):
+16. В параметр name вставляю `имя_сервисного_аккаунта`. Так же копирую сгенерированный ключ и вставляю в файл [meta.txt](https://github.com/nvdmike/OTUSPostgreSQL/blob/main/Lesson12/files/cloud-terraform/meta.txt "meta.txt"):
 
 ```log
 #cloud-config
@@ -140,25 +138,25 @@ users:
 
 > **Примечание:** при вставке ключа важно отставлять все символы и отступы.
 
-18. В файл [variables.tf](https://github.com/nvdmike/OTUSPostgreSQL/blob/main/Lesson12/files/cloud-terraform/variables.tf "variables.tf") прописываю путь к сгенерированному ssh-ключу:
+17. В файл [variables.tf](https://github.com/nvdmike/OTUSPostgreSQL/blob/main/Lesson12/files/cloud-terraform/variables.tf "variables.tf") прописываю путь к сгенерированному ssh-ключу:
 
 ```log
 default = "<путь_к_ssh_ключу>"
 ```
 
-19. Создаю на Яндекс.Облако сеть командой:
+18. Создаю на Яндекс.Облако сеть командой:
 
 ```bash
 yc vpc network create --name otus-vm-db-pg-net-1 --labels my-label=otus-vm-db-pg-net-1 --description "otus-vm-db-pg-net-1"
 ```
 
-20. Создаю на Яндекс.Облако подсеть командой:
+19. Создаю на Яндекс.Облако подсеть командой:
 
 ```bash
 yc vpc subnet create --name otus-vm-db-pg-subnet-1 --zone ru-central1-a --range 10.1.2.0/24 --network-name otus-vm-db-pg-net-1 --description "otus-vm-db-pg-subnet-1"
 ```
 
-21. Меняю `id_подсети` в настроечном файле [postgtes_settings.tf](https://github.com/nvdmike/OTUSPostgreSQL/blob/main/Lesson12/files/cloud-terraform/postgtes_settings.tf "postgtes_settings.tf"):
+20. Меняю `id_подсети` в настроечном файле [postgtes_settings.tf](https://github.com/nvdmike/OTUSPostgreSQL/blob/main/Lesson12/files/cloud-terraform/postgtes_settings.tf "postgtes_settings.tf"):
 
 ```log
 network_interface {
@@ -169,7 +167,7 @@ network_interface {
 
 > **Примечание:** после настройки terraform, сеть и подсеть уже лучше не удалять, либо каждый раз придётся прописывать новую подсеть в файле [postgtes_settings.tf](https://github.com/nvdmike/OTUSPostgreSQL/blob/main/Lesson12/files/cloud-terraform/postgtes_settings.tf "postgtes_settings.tf").
 
-22. Проверяю корректность настроечного файла:
+21. Проверяю корректность настроечного файла:
 
 ```bash
 terraform validate
