@@ -58,7 +58,7 @@ sudo systemctl restart postgresql
 sudo -u postgres psql
 ```
 
-8. Устанавливаю новый пароль (для теста выбрал пароль попроще - `123`) для пользователя `postgres`:
+8. Устанавливаю новый пароль для пользователя `postgres` (для теста выбрал пароль попроще - `123`):
 
 ```sql
 postgres=# \password postgres
