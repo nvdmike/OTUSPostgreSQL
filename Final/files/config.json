@@ -1,0 +1,22 @@
+{
+  "bind_addr": "0.0.0.0",
+  "bootstrap_expect": 3,
+  "client_addr": "0.0.0.0",
+  "data_dir": "/var/lib/consul",
+  "enable_script_checks": true,
+  "dns_config": {
+    "enable_truncate": true,
+    "only_passing": true
+  },
+  "enable_syslog": true,
+  "encrypt": "<ключ_consul>",
+  "leave_on_terminate": true,
+  "log_level": "debug",
+  "rejoin_after_leave": true,
+  "retry_join": ["pgtest-consul0","pgtest-consul1","pgtest-consul2"],
+  "server": true,
+  "ui_config": { "enabled": true },
+  "acl": {
+    "enabled": true
+  }
+}
